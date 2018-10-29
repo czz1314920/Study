@@ -1,0 +1,29 @@
+      for(int i=0; i <= pkt->cmd.DataLength; i++)
+      {
+        if(*(pkt->cmd.Data)=='1')
+        {
+          HalLedSet (HAL_LED_1, HAL_LED_MODE_ON);
+          HalLedSet (HAL_LED_2, HAL_LED_MODE_OFF);
+        }
+        else if(*(pkt->cmd.Data)=='0')
+        {
+          HalLedSet (HAL_LED_1, HAL_LED_MODE_OFF);
+        }
+        else
+        {
+          HalUARTWrite(0,"error\n",6);
+        }
+      }
+
+
+ZDObject.c
+
+      pMsg->event = ZDO_STATE_CHANGE;
+      pMsg->status = DEV_ROUTER;
+  else
+  {
+    // Modify in place the status of an existing ZDO_STATE_CHANGE message to the EndPoint.
+    pMsg->status = DEV_ROUTER;
+  }
+
+state       DEV_ROUTER;
