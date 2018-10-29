@@ -1,0 +1,37 @@
+网络技术：OSI模型
+Zigbee：
+
+
+
+
+ /*定义本设备用来通信的APS层端点描述符*/
+
+  SampleApp_epDesc.endPoint = SAMPLEAPP_ENDPOINT; 
+
+//SampleApp EP描述符的EP号：20
+
+  SampleApp_epDesc.task_id = &SampleApp_TaskID; 
+
+//SampleApp EP描述符的任务ID：6
+
+  SampleApp_epDesc.simpleDesc= (SimpleDescriptionFormat_t *)&SampleApp_SimpleDesc;  //SampleApp EP简单描述符
+
+  SampleApp_epDesc.latencyReq = noLatencyReqs; 
+
+//延时策略
+
+/*向AF层登记EP描述符*/
+
+ /*登记endpoint description 到AF,要对该应用进行初始化并在AF进行登记，告诉应用层有这么一个EP已经开通可以使用，那么下层要是有关于该应用的信息或者应用要对下层做哪些操作，就自动得到下层的配合。*/
+
+  // Fill out the endpoint description.
+  SampleApp_epDesc.endPoint = SAMPLEAPP_ENDPOINT;
+  SampleApp_epDesc.task_id = &SampleApp_TaskID;
+  SampleApp_epDesc.simpleDesc
+            = (SimpleDescriptionFormat_t *)&SampleApp_SimpleDesc;
+  SampleApp_epDesc.latencyReq = noLatencyReqs;
+
+
+
+  // Register the endpoint description with the AF
+  afRegister( &SampleApp_epDesc );

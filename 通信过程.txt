@@ -1,0 +1,7 @@
+1、设置协调器的通信（模式、端点号、目的地）
+2、定义本设备用来通信的APS层端点描述符（端点号、关联层、简单描述符）
+3、设置完1、2步骤；接下来就是数据的发送或接收
+	a、发送
+      SampleApp_SendPeriodicMessage();
+	b、接收
+      SampleApp_MessageMSGCB( MSGpkt );
