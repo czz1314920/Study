@@ -5,3 +5,19 @@
       SampleApp_SendPeriodicMessage();
 	b、接收
       SampleApp_MessageMSGCB( MSGpkt );
+
+拓展：
+1、PAN ID
+       在目录tool文件夹下的f8wConfig.cfg文件可以手动配置PAN ID的值，-DZDAPP_CONFIG_PAN_ID=0xFFFF
+       解析：ZigBee协议使用一个16位的个域网标志符（PAN ID）来标识一个网络。
+ZStack允许用两种方式配置PAN ID，当ZDAPP_CONFIG_PAN_ID值不设置为0xFFFF时，
+那么设备建立或加入网络的PAN ID由ZDAPP_CONFIG_PAN_ID指定；如果设置ZDAPP_CONFIG_PAN_ID为0xFFFF，
+那么设备就将建立或加入一个“最优”的网络。
+所有节点的PAN ID唯一，一个网络只有一个PAN ID，它是由PAN协调器生成的，PAN ID是可选配置项，用来控制 ZigBee路由器和终端节点要加入那个网络。文件f8wConfg.cfg中的 ZDO_CONFIG_PAN_ID 参数可以设置为一个 0~0x3FFF 之间的一个值。协调器使用这个值，作为它要启动的网络的 PAN ID。
+
+2、MAX_NODE_DEPTH网络最大深度：#define MAX_NODE_DEPTH      20
+
+3、Z-stack中可以在f8wConfig.cfg里设置信道：-DDEFAULT_CHANLIST=0x00000800  // 11 - 0x0B
+
+4、参考网址：http://cunxiachunshu.lofter.com/post/17f720_10bb3f9
+	PAN ID：百度百科
