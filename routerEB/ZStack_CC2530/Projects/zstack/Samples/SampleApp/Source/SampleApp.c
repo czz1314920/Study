@@ -152,9 +152,9 @@ void SampleApp_Init( uint8 task_id )
 
   // Setup for the periodic message's destination address
   // Broadcast to everyone
-  SampleApp_Periodic_DstAddr.addrMode = (afAddrMode_t)AddrBroadcast;
+  SampleApp_Periodic_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
   SampleApp_Periodic_DstAddr.endPoint = SAMPLEAPP_ENDPOINT;
-  SampleApp_Periodic_DstAddr.addr.shortAddr = 0xFFFF;
+  SampleApp_Periodic_DstAddr.addr.shortAddr = 0x0000;
 
   // Setup for the flash command's destination address - Group 1
   SampleApp_Flash_DstAddr.addrMode = (afAddrMode_t)afAddrGroup;
@@ -225,9 +225,11 @@ uint16 SampleApp_ProcessEvent( uint8 task_id, uint16 events )
           if ((SampleApp_NwkState == DEV_ROUTER))
           {
             // Start sending the periodic message in a regular interval.
+            HalLedSet (HAL_LED_1, HAL_LED_MODE_ON);
+            HalLedSet (HAL_LED_2, HAL_LED_MODE_ON);
              //HalLedBlink(HAL_LED_ALL,3,50,1000);
              //osal_start_timerEx(SampleApp_TaskID,Definition_Event_1,3000);
-            //osal_start_timerEx( SampleApp_TaskID,SAMPLEAPP_SEND_PERIODIC_MSG_EVT,SAMPLEAPP_SEND_PERIODIC_MSG_TIMEOUT );
+            osal_start_timerEx( SampleApp_TaskID,SAMPLEAPP_SEND_PERIODIC_MSG_EVT,SAMPLEAPP_SEND_PERIODIC_MSG_TIMEOUT );
           }
           else
           {
@@ -259,6 +261,7 @@ uint16 SampleApp_ProcessEvent( uint8 task_id, uint16 events )
   if ( events & SAMPLEAPP_SEND_PERIODIC_MSG_EVT )
   {
     // Send the periodic message
+
     SampleApp_SendPeriodicMessage();
 
     // Setup to send message again in normal period (+ a little jitter)
@@ -391,18 +394,8 @@ void SampleApp_MessageMSGCB( afIncomingMSGPacket_t *pkt )
   switch ( pkt->clusterId )
   {
     case SAMPLEAPP_PERIODIC_CLUSTERID:
-      if((pkt->cmd.Data[0])=='0')
-      {
-        HalLedSet (HAL_LED_1, HAL_LED_MODE_OFF);
-      }
-      else if((pkt->cmd.Data[0])=='1')
-      {
-         HalLedSet (HAL_LED_1, HAL_LED_MODE_ON);
-      }
-      else
-      {
-        HalUARTWrite(0,"error\n",5);
-      }
+      HalUARTWrite(0,pkt->cmd.Data,pkt->cmd.DataLength);
+      HalUARTWrite(0,"\r\n",2);
       break;
 
     case SAMPLEAPP_FLASH_CLUSTERID:
@@ -488,7 +481,14 @@ void SampleApp_SerialCMD(mtOSALSerialData_t *cmdMsg)
     str=cmdMsg->msg; //指向数据开头
     len=*str; //msg 里的第 1 个字节代表后面的数据长度
 /********打印出串口接收到的数据，用于提示*********/
-    for(i=1;i<=len;i++)
+
+     for(i=1;i<=len;i++)
+    {
+      SampleAppPeriodicCounter=*(str+i);
+      osal_start_timerEx( SampleApp_TaskID,SAMPLEAPP_SEND_PERIODIC_MSG_EVT,SAMPLEAPP_SEND_PERIODIC_MSG_TIMEOUT );
+      break;
+    }
+    for(i=1;i<=len && i>100;i++)
     {
 
        if('0'<=*(str+i)&&*(str+i)<='9')
@@ -514,7 +514,7 @@ void SampleApp_SerialCMD(mtOSALSerialData_t *cmdMsg)
          P1=0xFF;
        }
     }
-    HalUARTWrite(0,"\n",1 );//换行
+    //HalUARTWrite(0,"\n",1 );//换行
 
 
     P0DIR &= ~(0x10);

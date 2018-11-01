@@ -81,7 +81,8 @@ afAddrType_t SampleApp_Flash_DstAddr;
 
 aps_Group_t SampleApp_Group;
 
-uint8 SampleAppPeriodicCounter = 0;
+uint8 *SampleAppPeriodicCounter = 0;
+uint8  SampleAppCounter=1;
 uint8 SampleAppFlashCounter = 0;
 
 /*********************************************************************
@@ -126,7 +127,7 @@ void SampleApp_Init( uint8 task_id )
 
   /* Register taskID - Do this after UartInit() because it will reset the taskID */
   MT_UartRegisterTaskID(task_id);
-  HalUARTWrite(0,"CoordinatorEB\n",14);
+  HalUARTWrite(0,"Coordinator\n",12);
 
   // Device hardware initialization can be added here or in main() (Zmain.c).
   // If the hardware is application specific - add it here.
@@ -152,9 +153,9 @@ void SampleApp_Init( uint8 task_id )
 
   // Setup for the periodic message's destination address
   // Broadcast to everyone
-  SampleApp_Periodic_DstAddr.addrMode = (afAddrMode_t)AddrBroadcast;
+  SampleApp_Periodic_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
   SampleApp_Periodic_DstAddr.endPoint = SAMPLEAPP_ENDPOINT;
-  SampleApp_Periodic_DstAddr.addr.shortAddr = 0xFFFF;
+  SampleApp_Periodic_DstAddr.addr.shortAddr = 0x0039;
 
   // Setup for the flash command's destination address - Group 1
   SampleApp_Flash_DstAddr.addrMode = (afAddrMode_t)afAddrGroup;
@@ -216,7 +217,7 @@ uint16 SampleApp_ProcessEvent( uint8 task_id, uint16 events )
 
         // Received when a messages is received (OTA) for this endpoint
         case AF_INCOMING_MSG_CMD:
-          //SampleApp_MessageMSGCB( MSGpkt );
+          SampleApp_MessageMSGCB( MSGpkt );
           break;
 
         // Received whenever the device changes state in the network
@@ -389,10 +390,60 @@ void SampleApp_HandleKeys( uint8 shift, uint8 keys )
 void SampleApp_MessageMSGCB( afIncomingMSGPacket_t *pkt )
 {
   uint16 flashTime;
+  uint16 addr_short,buf[5];
+  uint8 addr_sh[6];
 
   switch ( pkt->clusterId )
   {
     case SAMPLEAPP_PERIODIC_CLUSTERID:
+      addr_short = pkt->srcAddr.addr.shortAddr;
+      addr_sh[0]='0';
+      addr_sh[1]='x';
+      buf[0]= (addr_short>>12)&0x0f;
+      if(buf[0] > 0x9)
+         addr_sh[2]=buf[0] - 0xA + 'A';
+      else
+         addr_sh[2]=buf[0] + '0';
+
+      buf[1]= (addr_short>>8)&0x0f;
+      if(buf[1] > 0x9)
+         addr_sh[3]=buf[1] - 0xA + 'A';
+      else
+         addr_sh[3]=buf[1] + '0';
+
+
+      buf[2]= (addr_short>>4)&0x0f;
+      if(buf[2] > 0x9)
+         addr_sh[4]=buf[2] - 0xA + 'A';
+      else
+         addr_sh[4]=buf[2] + '0';
+
+
+      buf[3]= (addr_short&0x0f);
+      if(buf[3] > 0x9)
+         addr_sh[5]=buf[3] - 0xA + 'A';
+      else
+         addr_sh[5]=buf[3] + '0';
+
+      HalUARTWrite(0,addr_sh,6);
+      HalUARTWrite(0,"\r\n",2);
+
+      if((pkt->cmd.Data[0])=='1') //light
+      {
+        HalLedSet (HAL_LED_1, HAL_LED_MODE_ON);
+        HalLedSet (HAL_LED_2, HAL_LED_MODE_ON);
+        SampleAppPeriodicCounter="light";
+        SampleAppCounter=5;
+      }
+      else
+      {
+        HalLedSet (HAL_LED_1, HAL_LED_MODE_OFF);
+        HalLedSet (HAL_LED_2, HAL_LED_MODE_OFF);
+        SampleAppPeriodicCounter="dark";
+        SampleAppCounter=4;
+      }
+      SampleApp_Periodic_DstAddr.addr.shortAddr=addr_short;
+      SampleApp_SendPeriodicMessage();
       break;
 
     case SAMPLEAPP_FLASH_CLUSTERID:
@@ -415,8 +466,8 @@ void SampleApp_SendPeriodicMessage( void )
 {
   if ( AF_DataRequest( &SampleApp_Periodic_DstAddr, &SampleApp_epDesc,
                        SAMPLEAPP_PERIODIC_CLUSTERID,
-                       1,
-                       (uint8*)&SampleAppPeriodicCounter,
+                       SampleAppCounter,                                //1
+                       (uint8*)SampleAppPeriodicCounter,                //(uint8*)&SampleAppPeriodicCounter
                        &SampleApp_TransID,
                        AF_DISCV_ROUTE,
                        AF_DEFAULT_RADIUS ) == afStatus_SUCCESS )
@@ -478,12 +529,12 @@ void SampleApp_SerialCMD(mtOSALSerialData_t *cmdMsg)
     str=cmdMsg->msg; //指向数据开头
     len=*str; //msg 里的第 1 个字节代表后面的数据长度
 /********打印出串口接收到的数据，用于提示*********/
-    for(i=1;i<=len;i++)
+    /*for(i=1;i<=len;i++)
     {
       SampleAppPeriodicCounter=*(str+i);
       osal_start_timerEx( SampleApp_TaskID,SAMPLEAPP_SEND_PERIODIC_MSG_EVT,SAMPLEAPP_SEND_PERIODIC_MSG_TIMEOUT );
       break;
-    }
+    }  */
     for(i=1;i<=len&&i > 100 ;i++)
     {
 
